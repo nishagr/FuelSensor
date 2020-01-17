@@ -3,9 +3,7 @@ package ketank.bloodbank.Urls;
 
 import ketank.bloodbank.Adapters.StockAdapter;
 
-/**
- * Created by Ketan-PC on 11/1/2017.
- */
+
 
 public class All_urls {
     public static abstract class values {

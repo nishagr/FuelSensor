@@ -62,9 +62,9 @@ public class NearbyActivity extends AppCompatActivity {
 
         spinner.setItems("All", "O+","O-","A+", "A-","B+","B-","AB+","AB-");
 
-        progressBar = findViewById(R.id.progd);
+        progressBar = (ProgressBar) findViewById(R.id.progd);
         progressBar.setVisibility(View.VISIBLE);
-        recyclerView =findViewById(R.id.recyclerView);
+        recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(linearLayoutManager);

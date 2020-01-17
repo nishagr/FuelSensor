@@ -24,7 +24,7 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
-import com.google.firebase.iid.FirebaseInstanceId;
+//import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -281,7 +281,7 @@ public class LoginActivity extends AppCompatActivity {
                 params.put("donor", check);
                 params.put("age", age);
                 params.put("gender", gender);
-                params.put("token", FirebaseInstanceId.getInstance().getToken());
+                //params.put("token", FirebaseInstanceId.getInstance().getToken());
                 return params;
             }
 
@@ -357,7 +357,7 @@ public class LoginActivity extends AppCompatActivity {
                 // Adding All values to Params.
                 params.put("phone", userid);
                 params.put("password", pass);
-                params.put("token", FirebaseInstanceId.getInstance().getToken());
+                //params.put("token", FirebaseInstanceId.getInstance().getToken());
                 return params;
             }
 

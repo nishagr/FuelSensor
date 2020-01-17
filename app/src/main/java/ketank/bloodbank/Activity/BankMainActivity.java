@@ -21,7 +21,7 @@ public class BankMainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bank_main);
 
-        viewPager= findViewById(R.id.viewpager);
+        viewPager= (ViewPager) findViewById(R.id.viewpager);
         tabsStrip = (PagerSlidingTabStrip) findViewById(R.id.tabs);
 
         tabsStrip.setShouldExpand(true);

@@ -41,8 +41,8 @@ public class UserMainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_main);
 
-        users= findViewById(R.id.card1);
-        hospitals = findViewById(R.id.card2);
+        users= (CardView) findViewById(R.id.card1);
+        hospitals = (CardView) findViewById(R.id.card2);
 
 
 
