@@ -119,7 +119,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_maps);
         dialog = new ProgressDialog(this);
         preferences = getSharedPreferences("mypref", Context.MODE_PRIVATE);
-        recycle = (RecyclerView) findViewById(R.id.recycle);
+        recycle =  findViewById(R.id.recycle);
 
 
 

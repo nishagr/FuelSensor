@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.View;
@@ -16,13 +17,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 
+import com.scwang.wave.MultiWaveHeader;
+
 import fr.quentinklein.slt.LocationTracker;
 import fr.quentinklein.slt.TrackerSettings;
 import ketank.bloodbank.Fragments.User.NearbyActivity;
 import ketank.bloodbank.R;
+import me.itangqi.waveloadingview.WaveLoadingView;
 
 public class UserMainActivity extends AppCompatActivity {
-   CardView users,hospitals;
+
+    //MultiWaveHeader fuel_wave;
+    WaveLoadingView waveLoadingView;
+    CardView users,hospitals;
     LocationTracker tracker;
     int REQUEST_LOCATION=5;
     SharedPreferences preferences;
@@ -30,22 +37,26 @@ public class UserMainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_main);
-        users= (CardView) findViewById(R.id.card1);
+        //users= (CardView) findViewById(R.id.card1);
         hospitals = (CardView) findViewById(R.id.card2);
+
+        waveLoadingView =(WaveLoadingView) findViewById(R.id.waveLoadingView);
+        waveLoadingView.setProgressValue(50);
+
 
 
 
         preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
 
-        users.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                Intent intent = new Intent(UserMainActivity.this, NearbyActivity.class);
-                startActivity(intent);
-
-            }
-        });
+//        users.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//
+//                Intent intent = new Intent(UserMainActivity.this, NearbyActivity.class);
+//                startActivity(intent);
+//
+//            }
+//        });
 
         hospitals.setOnClickListener(new View.OnClickListener() {
             @Override

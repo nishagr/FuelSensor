@@ -34,12 +34,7 @@
         <activity android:name=".Activity.MapsActivity"></activity>
         <activity android:name=".Activity.BankMainActivity"/>
         <activity android:name=".Fragments.User.NearbyActivity"></activity>
-        <service
-            android:name=".Firebase.MyFirebaseInstanceIdService">
-            <intent-filter>
-                <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
-            </intent-filter>
-        </service>
+
 
         <service android:name=".Firebase.MyFirebaseMessagingService">
             <intent-filter>

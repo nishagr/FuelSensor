@@ -21,58 +21,100 @@
         android:id="@+id/logout"
         android:onClick="LogOut"/>
 
-    <androidx.cardview.widget.CardView
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        app:cardCornerRadius="8dp"
-        android:id="@+id/card1"
-        android:layout_centerHorizontal="true"
-        app:cardElevation="8dp"
-        android:layout_marginTop="90dp"
-        >
-        <FrameLayout
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/logout"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="40dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <!--<androidx.cardview.widget.CardView
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            app:cardCornerRadius="8dp"
+            android:id="@+id/card1"
+            android:layout_centerHorizontal="true"
+            app:cardElevation="8dp"
+            android:layout_marginTop="90dp"
+            >
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/eventbg">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#fff"
+                    android:layout_gravity="center"
+                    android:textStyle="bold"
+                    android:textSize="20dp"
+                    android:text="NearBy"/>
+
+            </FrameLayout>
+        </androidx.cardview.widget.CardView>-->
+
+        <me.itangqi.waveloadingview.WaveLoadingView
+            android:id="@+id/waveLoadingView"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_margin="32dp"
+            app:wlv_borderColor="@color/colorAccent"
+            app:wlv_borderWidth="3dp"
+            app:wlv_shapeType="circle"
+            app:wlv_round_rectangle="true"
+            app:wlv_triangle_direction="north"
+
+            app:wlv_titleCenterStrokeWidth="3dp"
+            app:wlv_titleCenterColor="@android:color/white"
+            app:wlv_titleCenterSize="24sp"
+
+           app:wlv_titleTopStrokeWidth="3dp"
+            app:wlv_titleTopColor="@android:color/white"
+            app:wlv_titleTopSize="24sp"
+
+            app:wlv_titleBottomStrokeWidth="3dp"
+            app:wlv_titleBottomColor="@android:color/white"
+            app:wlv_titleBottomSize="24sp"
+
+            app:wlv_waveAmplitude="70"
+            app:wlv_waveColor="@color/colorAccent"
+
+            />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card2"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/eventbg">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#fff"
-                android:layout_gravity="center"
-                android:textStyle="bold"
-                android:textSize="20dp"
-                android:text="NearBy"/>
+            android:layout_height="100dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="32dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="8dp">
 
-        </FrameLayout>
-    </androidx.cardview.widget.CardView>
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
 
-    <androidx.cardview.widget.CardView
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        app:cardCornerRadius="8dp"
-        android:layout_marginTop="20dp"
-        android:layout_below="@+id/card1"
-        android:id="@+id/card2"
-        android:layout_centerInParent="true"
-        app:cardElevation="8dp"
-        >
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+                android:background="@drawable/eventbg">
 
-            android:background="@drawable/eventbg">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#fff"
-                android:gravity="center"
-                android:layout_gravity="center"
-                android:textStyle="bold"
-                android:textSize="20dp"
-                android:text="Petrol Pump Nearby"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:text="Petrol Pump Nearby"
+                    android:textColor="#fff"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
 
-        </FrameLayout>
-    </androidx.cardview.widget.CardView>
+            </FrameLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
 
 
 </RelativeLayout>
