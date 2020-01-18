@@ -1,10 +1,11 @@
 package ketank.bloodbank.Other;
 
 import android.content.Context;
-import android.support.v7.widget.RecyclerView;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * Created by Ketan-PC on 12/26/2017.

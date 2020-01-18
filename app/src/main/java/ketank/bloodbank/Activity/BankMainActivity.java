@@ -1,12 +1,13 @@
 package ketank.bloodbank.Activity;
 
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.viewpager.widget.ViewPager;
+
 import com.astuetz.PagerSlidingTabStrip;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import ketank.bloodbank.Adapters.StockAdapter;
 import ketank.bloodbank.R;

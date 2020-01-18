@@ -2,38 +2,46 @@ package ketank.bloodbank.Activity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.net.Uri;
+import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.content.FileProvider;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.os.Handler;
+import android.os.SystemClock;
+import android.provider.Settings;
+
+import androidx.fragment.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.LinearLayout;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.Interpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
 import com.directions.route.RouteException;
 import com.directions.route.Routing;
 import com.directions.route.RoutingListener;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -45,15 +53,18 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.jaredrummler.materialspinner.MaterialSpinner;
+import com.google.maps.android.PolyUtil;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import ketank.bloodbank.Adapters.BankListAdapter;
@@ -65,36 +76,71 @@ import ketank.bloodbank.R;
 import ketank.bloodbank.Urls.All_urls;
 
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,GoogleMap.OnMarkerClickListener,RoutingListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,GoogleMap.OnMarkerClickListener,RoutingListener, com.google.android.gms.location.LocationListener,GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
 
-    static final int Request_Camera  = 2 ;
-    private File imageFile;
+    /*static final int Request_Camera  = 2 ;
+    private File imageFile;*/
+
+    private Location currentLocation;
+    private Marker currentLocationMarker;
+    private LocationManager mlocationManager;
+    private float start_rotation;
+
+    String placelat,placelang;
+
+    private Polyline polyline;
+
     private GoogleMap mMap;
     ProgressDialog dialog;
     RecyclerView recycle;
-    private List<Polyline> polylines=new ArrayList<>();
+    private List<Polyline> polylines = new ArrayList<>();
     SharedPreferences preferences;
     final ArrayList<BloodBank> bloodBanks = new ArrayList<>();
-    LatLng source;
-    MaterialSpinner spinner;
+    LatLng userLatLng;
+
+    private LocationManager locationManager;
+    private boolean isPermission;
+    private GoogleApiClient mGoogleApiClient;
+    private Location mLocation;
+    private LocationRequest mlocationRequest;
+
+    private long UPDATE_INTERVAL = 20;
+    private long FASTEST_INTERVAL = 2000;
+
+    String latitude,longitude;
+
+    LatLng latLngDestination;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        dialog=new ProgressDialog(this);
-preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
-        recycle= (RecyclerView) findViewById(R.id.recycle);
+        dialog = new ProgressDialog(this);
+        preferences = getSharedPreferences("mypref", Context.MODE_PRIVATE);
+        recycle = (RecyclerView) findViewById(R.id.recycle);
 
-        spinner = (MaterialSpinner) findViewById(R.id.spinner);
 
-        spinner.setItems("All", "O+","O-","A+", "A-","B+","B-","AB+","AB-");
 
-       source= new LatLng(Double.parseDouble(preferences.getString("myLat","")),Double.parseDouble(preferences.getString("mylang","")));
+        /*userLatLng = new LatLng(Double.parseDouble(preferences.getString("myLat", "")), Double.parseDouble(preferences.getString("mylang", "")));*/
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         recycle.setLayoutManager(layoutManager);
+
+
+        if (requestSinglePermission()) {
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
+
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+
+            mlocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+            checkLocation();
+        }
 
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -102,35 +148,56 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         dialog.setTitle("Getting Data...");
-       dialog.show();
+        dialog.show();
 
         recycle.addOnItemTouchListener(new RecyclerTouchListener(this, recycle, new ClickListener() {
             @Override
             public void onClick(View view, int position) {
 
                 try {
+                    LatLng latLng = new LatLng(mLocation.getLatitude(),mLocation.getLongitude());
+                    latLngDestination = new LatLng(Double.parseDouble(bloodBanks.get(position).getLat()),Double.parseDouble(bloodBanks.get(position).getLang()));
 
-
-                    String mylat = String.format("%.4f", source.latitude);
-                    String mylang = String.format("%.4f", source.longitude);
-                    String placelat = String.format("%.4f", Double.parseDouble(bloodBanks.get(position).getLat()));
-                    String placelang = String.format("%.4f", Double.parseDouble(bloodBanks.get(position).getLang()));
+                    String mylat = String.format("%.4f",mLocation.getLatitude());
+                    String mylang = String.format("%.4f", mLocation.getLongitude());
+                    placelat = String.format("%.4f", Double.parseDouble(bloodBanks.get(position).getLat()));
+                    placelang = String.format("%.4f", Double.parseDouble(bloodBanks.get(position).getLang()));
 
 
                   /*  Intent intent = new Intent(android.content.Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?saddr=" + mylat + "," + mylang + "&daddr=" + placelat + "," + placelang));
                     intent.setClassName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity");
                     startActivity(intent);*/
-                Routing routing = new Routing.Builder()
-                        .key("AIzaSyBPs9eolVNUuDJgOz1M8zn7GozvShe1Ghk")
-                        .travelMode(Routing.TravelMode.DRIVING)
-                        .withListener(MapsActivity.this)
-                        .waypoints(new LatLng(Double.parseDouble(mylat),Double.parseDouble(mylang)),new LatLng(Double.parseDouble(placelat),Double.parseDouble(placelang)))
-                        .build();
 
-                routing.execute();
-                }catch (Exception e){
-                    Log.d("ffw",e.toString());
+                    /*GoogleDirection.withServerKey("AIzaSyBPs9eolVNUuDJgOz1M8zn7GozvShe1Ghk")
+                            .from(latLng)
+                            .to(latLngDestination)
+                            .transportMode(TransportMode.DRIVING)
+                            .alternativeRoute(true)
+                            .execute(new DirectionCallback() {
+                                @Override
+                                public void onDirectionSuccess(Direction direction) {
+                                    if(direction.isOK()){
+                                    }
+                                }
+                                @Override
+                                public void onDirectionFailure(Throwable t) {
+                                }
+                            });*/
+
+                    Routing routing = new Routing.Builder()
+                            .key("AIzaSyBPs9eolVNUuDJgOz1M8zn7GozvShe1Ghk")
+                            .travelMode(Routing.TravelMode.DRIVING)
+                            .withListener(MapsActivity.this)
+                            .waypoints(latLng, new LatLng(Double.parseDouble(placelat), Double.parseDouble(placelang)))
+                            .build();
+
+
+
+                    routing.execute();
+                } catch (Exception e) {
+                    Log.d("ffw", e.toString());
                 }
+
             }
 
             @Override
@@ -138,138 +205,6 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
 
             }
         }));
-
-        spinner.setOnItemSelectedListener(new MaterialSpinner.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(MaterialSpinner view, int position, long id, Object item) {
-
-                if(position==0){
-                    final ArrayList<BloodBank> bloodBanks1 = new ArrayList<>();
-
-
-                    BankListAdapter adapter = new BankListAdapter(bloodBanks,MapsActivity.this);
-                     recycle.setAdapter(adapter);
-
-
-
-                }    else   if(position==1){
-                    final ArrayList<BloodBank> bloodBanks1 = new ArrayList<>();
-
-                    for(BloodBank bank:bloodBanks){
-                        if(bank.getOps()>0) {
-                            bloodBanks1.add(bank);
-                        }
-                    }
-
-                    BankListAdapter adapter = new BankListAdapter(bloodBanks1,MapsActivity.this);
-                    recycle.setAdapter(adapter);
-
-
-
-                }
-                else   if(position==2){
-                    final ArrayList<BloodBank> bloodBanks1 = new ArrayList<>();
-
-                    for(BloodBank bank:bloodBanks){
-                        if(bank.getOng()>0) {
-                            bloodBanks1.add(bank);
-                        }
-                    }
-
-                    BankListAdapter adapter = new BankListAdapter(bloodBanks1,MapsActivity.this);
-                    recycle.setAdapter(adapter);
-
-
-
-                } else   if(position==3){
-                    final ArrayList<BloodBank> bloodBanks1 = new ArrayList<>();
-
-                    for(BloodBank bank:bloodBanks){
-                        if(bank.getAps()>0) {
-                            bloodBanks1.add(bank);
-                        }
-                    }
-
-                    BankListAdapter adapter = new BankListAdapter(bloodBanks1,MapsActivity.this);
-                    recycle.setAdapter(adapter);
-
-
-
-                } else   if(position==4){
-                    final ArrayList<BloodBank> bloodBanks1 = new ArrayList<>();
-
-                    for(BloodBank bank:bloodBanks){
-                        if(bank.getAng()>0) {
-                            bloodBanks1.add(bank);
-                        }
-                    }
-
-                    BankListAdapter adapter = new BankListAdapter(bloodBanks1,MapsActivity.this);
-                    recycle.setAdapter(adapter);
-
-
-
-                } else   if(position==5){
-                    final ArrayList<BloodBank> bloodBanks1 = new ArrayList<>();
-
-                    for(BloodBank bank:bloodBanks){
-                        if(bank.getBps()>0) {
-                            bloodBanks1.add(bank);
-                        }
-                    }
-
-                    BankListAdapter adapter = new BankListAdapter(bloodBanks1,MapsActivity.this);
-                    recycle.setAdapter(adapter);
-
-
-
-                } else   if(position==6){
-                    final ArrayList<BloodBank> bloodBanks1 = new ArrayList<>();
-
-                    for(BloodBank bank:bloodBanks){
-                        if(bank.getBng()>0) {
-                            bloodBanks1.add(bank);
-                        }
-                    }
-
-                    BankListAdapter adapter = new BankListAdapter(bloodBanks1,MapsActivity.this);
-                    recycle.setAdapter(adapter);
-
-
-
-                } else   if(position==7){
-                    final ArrayList<BloodBank> bloodBanks1 = new ArrayList<>();
-
-                    for(BloodBank bank:bloodBanks){
-                        if(bank.getAbps()>0) {
-                            bloodBanks1.add(bank);
-                        }
-                    }
-
-                    BankListAdapter adapter = new BankListAdapter(bloodBanks1,MapsActivity.this);
-                    recycle.setAdapter(adapter);
-
-
-
-                } else   if(position==8){
-                    final ArrayList<BloodBank> bloodBanks1 = new ArrayList<>();
-
-                    for(BloodBank bank:bloodBanks){
-                        if(bank.getAbng()>0) {
-                            bloodBanks1.add(bank);
-                        }
-                    }
-
-                    BankListAdapter adapter = new BankListAdapter(bloodBanks1,MapsActivity.this);
-                    recycle.setAdapter(adapter);
-
-
-
-                }
-
-            }
-        });
-
     }
 
 
@@ -286,26 +221,26 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        if(userLatLng != null){
+            MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(userLatLng);
+            markerOptions.title("I am here");
+            currentLocationMarker = mMap.addMarker(markerOptions);
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(userLatLng));
+        }
 
-           googleMap.setOnMarkerClickListener(this);
+        googleMap.setOnMarkerClickListener(this);
 
 
-
-        // Add a marker in Sydney and move the camera
-
-       getData(All_urls.values.GetAllBloodBanks);
-
-
+        getData(All_urls.values.GetAllBloodBanks);
 
 
     }
 
 
-
-
     private void getData(String url) {
 
-        JsonArrayRequest getRequest = new JsonArrayRequest(Request.Method.GET, url,null,
+        JsonArrayRequest getRequest = new JsonArrayRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONArray>() {
 
                     @Override
@@ -317,14 +252,13 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
                         try {
 
 
-
                             if (p.length() > 0) {
 
-                                for (int i=0;i<p.length();i++){
+                                for (int i = 0; i < p.length(); i++) {
                                     BloodBank mapModel = new BloodBank();
 
-                                   JSONObject post = p.getJSONObject(i);
-                                   mapModel.setId(post.getString("Id"));
+                                    JSONObject post = p.getJSONObject(i);
+                                    mapModel.setId(post.getString("Id"));
                                     mapModel.setImgUrl(post.getString("ImgUrl"));
                                     mapModel.setLat(post.getString("Lat"));
                                     mapModel.setLang(post.getString("Lang"));
@@ -339,22 +273,18 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
                                     mapModel.setBps(post.getInt("Bps"));
                                     mapModel.setBng(post.getInt("Bng"));
 
-                                   // mapModel.setrating(post.getDouble("rating"));
 
                                     bloodBanks.add(mapModel);
 
                                     LatLng place = new LatLng(Double.parseDouble(mapModel.getLat()), Double.parseDouble(mapModel.getLang()));
-                                    mMap.addMarker(new MarkerOptions().position(place).title("\nName:"+mapModel.getName()
-                                                    //+String.valueOf(mapModel.getrating())
-                                            // +"\n"+mapModel.getrating()
-                                    ).icon(BitmapDescriptorFactory.fromResource(R.drawable.fuel)));
+                                    mMap.addMarker(new MarkerOptions().position(place).title("\nName:" + mapModel.getName()).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
 
 
                                 }
 
-                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(bloodBanks.get(0).getLat()),Double.parseDouble(bloodBanks.get(0).getLang())),12));
+                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(bloodBanks.get(0).getLat()), Double.parseDouble(bloodBanks.get(0).getLang())), 12));
 
-                                BankListAdapter adapter = new BankListAdapter(bloodBanks,MapsActivity.this);
+                                BankListAdapter adapter = new BankListAdapter(bloodBanks, MapsActivity.this);
                                 recycle.setAdapter(adapter);
 
                             }
@@ -364,7 +294,6 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
                             // JSON error
                             e.printStackTrace();
                             dialog.dismiss();
-
 
 
                         }
@@ -390,20 +319,6 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
     @Override
     public boolean onMarkerClick(Marker marker) {
 
-        Location locationA = new Location("point A");
-
-        locationA.setLatitude(source.latitude);
-        locationA.setLongitude(source.longitude);
-
-        Location locationB = new Location("point B");
-
-        locationB.setLatitude(marker.getPosition().latitude);
-        locationB.setLongitude(marker.getPosition().longitude);
-
-        float distance = locationA.distanceTo(locationB);
-      //  Double d=
-        Toast.makeText(getApplicationContext(),marker.getTitle()+"\ndistance="+distance+"m",Toast.LENGTH_LONG).show();
-
         return false;
     }
 
@@ -420,16 +335,15 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
     @Override
     public void onRoutingSuccess(ArrayList<Route> arrayList, int i) {
 
-        CameraUpdate center = CameraUpdateFactory.newLatLngZoom(source,16);
-        mMap.addMarker(new MarkerOptions().position(source));
 
 
+        CameraUpdate center = CameraUpdateFactory.newLatLngZoom(userLatLng, 16);
 
 
         mMap.moveCamera(center);
 
 
-        if(polylines.size()>0) {
+        if (polylines.size() > 0) {
             for (Polyline poly : polylines) {
                 poly.remove();
             }
@@ -439,15 +353,16 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
         //add route(s) to the map.
 
 
-            //In case of more than 5 alternative routes
+        //In case of more than 5 alternative routes
 
 
-            PolylineOptions polyOptions = new PolylineOptions();
-            polyOptions.color(getResources().getColor(R.color.colorPrimary));
-            polyOptions.width(10 + i * 3);
-            polyOptions.addAll(arrayList.get(i).getPoints());
-            Polyline polyline = mMap.addPolyline(polyOptions);
-            polylines.add(polyline);
+        PolylineOptions polyOptions = new PolylineOptions();
+        polyOptions.color(getResources().getColor(R.color.colorPrimary));
+        polyOptions.width(10 + i * 3);
+        polyOptions.addAll(arrayList.get(i).getPoints());
+        polyline = mMap.addPolyline(polyOptions);
+        polylines.add(polyline);
+
 
 
 
@@ -458,4 +373,229 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
     public void onRoutingCancelled() {
 
     }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        location = mLocation;
+        latitude = String.valueOf(location.getLatitude());
+        longitude = String.valueOf(location.getLongitude());
+        LatLng latLngNew = new LatLng(location.getLatitude(),location.getLongitude());
+
+
+        if(polyline!=null) {
+            if (!PolyUtil.isLocationOnPath(userLatLng, polyline.getPoints(), true, 20)) {
+                polyline.remove();
+                Routing routing = new Routing.Builder()
+                        .key("AIzaSyBPs9eolVNUuDJgOz1M8zn7GozvShe1Ghk")
+                        .travelMode(Routing.TravelMode.DRIVING)
+                        .withListener(MapsActivity.this)
+                        .waypoints(latLngNew, new LatLng(Double.parseDouble(placelat), Double.parseDouble(placelang)))
+                        .build();
+
+                routing.execute();
+
+
+            }
+        }
+
+        if (currentLocationMarker != null) {
+
+            moveMarker(currentLocationMarker, location);
+            /*rotateMarker(currentLocationMarker,location.getBearing(),start_rotation);*/
+        } else {
+            userLatLng = new LatLng(location.getLatitude(),location.getLongitude());
+
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
+        }
+    }
+
+    public void moveMarker(final Marker myMarker, final Location finalPosition) {
+        final LatLng startPosition = myMarker.getPosition();
+
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+        final Interpolator interpolator = new AccelerateDecelerateInterpolator();
+        final float durationInMs = 2000;
+        final boolean hideMarker = false;
+
+        handler.post(new Runnable() {
+            long elapsed;
+            float t;
+            float v;
+
+            @Override
+            public void run() {
+                // Calculate progress using interpolator
+                elapsed = SystemClock.uptimeMillis() - start;
+                t = elapsed / durationInMs;
+                v = interpolator.getInterpolation(t);
+
+                LatLng currentPosition = new LatLng(
+                        startPosition.latitude * (1 - t) + (finalPosition.getLatitude()) * t,
+                        startPosition.longitude * (1 - t) + (finalPosition.getLongitude()) * t);
+                myMarker.setPosition(currentPosition);
+                // myMarker.setRotation(finalPosition.getBearing());
+
+
+                // Repeat till progress is completeelse
+                if (t < 1) {
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 16);
+                    // handler.postDelayed(this, 100);
+                } else {
+                    if (hideMarker) {
+                        myMarker.setVisible(false);
+                    } else {
+                        myMarker.setVisible(true);
+                    }
+                }
+            }
+        });
+    }
+
+    private boolean checkLocation() {
+
+        if (!isLocationEnabled()) {
+            showAlert();
+        }
+        return isLocationEnabled();
+
+    }
+
+    private void showAlert() {
+
+        final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("Enable Location")
+                .setMessage("Please Enable Location")
+                .setPositiveButton("LocationSettings", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivity(intent);
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+        dialog.show();
+
+    }
+
+    private boolean isLocationEnabled() {
+
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+    }
+
+    private boolean requestSinglePermission() {
+        Dexter.withActivity(this)
+                .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                .withListener(new PermissionListener() {
+                    @Override
+                    public void onPermissionGranted(PermissionGrantedResponse response) {
+                        isPermission = true;
+                    }
+
+                    @Override
+                    public void onPermissionDenied(PermissionDeniedResponse response) {
+                        if (response.isPermanentlyDenied()) {
+                            isPermission = false;
+                        }
+                    }
+
+                    @Override
+                    public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
+
+                    }
+                }).check();
+        return isPermission;
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        startLocationUpdates();
+        mLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+
+        if (mLocation == null) {
+            startLocationUpdates();
+        }
+    }
+
+    private void startLocationUpdates() {
+
+        mlocationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(UPDATE_INTERVAL)
+                .setFastestInterval(FASTEST_INTERVAL);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mlocationRequest, this);
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.connect();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        if (mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
+    }
+    public void rotateMarker(final Marker marker, final float toRotation, final float st) {
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+        final float startRotation = st;
+        final long duration = 1555;
+
+        final Interpolator interpolator = new LinearInterpolator();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = interpolator.getInterpolation((float) elapsed / duration);
+
+                float rot = t * toRotation + (1 - t) * startRotation;
+
+
+                marker.setRotation(-rot > 180 ? rot / 2 : rot);
+                start_rotation = -rot > 180 ? rot / 2 : rot;
+                if (t < 1.0) {
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 16);
+                }
+            }
+        });
+    }
+
 }

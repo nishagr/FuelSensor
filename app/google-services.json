@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "816210171835",
+    "firebase_url": "https://fuelsensor-f975a.firebaseio.com",
+    "project_id": "fuelsensor-f975a",
+    "storage_bucket": "fuelsensor-f975a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:816210171835:android:8622c53d009512d3d7169e",
+        "android_client_info": {
+          "package_name": "ketank.bloodbank"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "816210171835-30d3hf12uh4eenlbtm379uupc7dj1cf8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ketank.bloodbank",
+            "certificate_hash": "f44b82ea845d8d3aa5832ae9f40ad518f018a703"
+          }
+        },
+        {
+          "client_id": "816210171835-l36rmcna4jp8vlru8qmr4r2ql64abep5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0VLRgPrXlhb4w1DGj2L7-zVluvPKG2ls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "816210171835-l36rmcna4jp8vlru8qmr4r2ql64abep5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

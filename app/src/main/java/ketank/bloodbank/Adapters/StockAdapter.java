@@ -1,12 +1,13 @@
 package ketank.bloodbank.Adapters;
 
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
 
 import ketank.bloodbank.Fragments.BankDonorsFragment;
 import ketank.bloodbank.Fragments.BankStock;
+
 
 public class StockAdapter extends FragmentPagerAdapter {
     String [] title = {"Stock","Donors NearBy"};
