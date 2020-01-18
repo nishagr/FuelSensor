@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -38,6 +39,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -337,11 +339,15 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
                                     mapModel.setBps(post.getInt("Bps"));
                                     mapModel.setBng(post.getInt("Bng"));
 
+                                   // mapModel.setrating(post.getDouble("rating"));
 
                                     bloodBanks.add(mapModel);
 
                                     LatLng place = new LatLng(Double.parseDouble(mapModel.getLat()), Double.parseDouble(mapModel.getLang()));
-                                    mMap.addMarker(new MarkerOptions().position(place).title("\nName:"+mapModel.getName()));
+                                    mMap.addMarker(new MarkerOptions().position(place).title("\nName:"+mapModel.getName()
+                                                    //+String.valueOf(mapModel.getrating())
+                                            // +"\n"+mapModel.getrating()
+                                    ).icon(BitmapDescriptorFactory.fromResource(R.drawable.fuel)));
 
 
                                 }
@@ -383,7 +389,20 @@ preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        Toast.makeText(getApplicationContext(),marker.getTitle(),Toast.LENGTH_LONG).show();
+
+        Location locationA = new Location("point A");
+
+        locationA.setLatitude(source.latitude);
+        locationA.setLongitude(source.longitude);
+
+        Location locationB = new Location("point B");
+
+        locationB.setLatitude(marker.getPosition().latitude);
+        locationB.setLongitude(marker.getPosition().longitude);
+
+        float distance = locationA.distanceTo(locationB);
+      //  Double d=
+        Toast.makeText(getApplicationContext(),marker.getTitle()+"\ndistance="+distance+"m",Toast.LENGTH_LONG).show();
 
         return false;
     }

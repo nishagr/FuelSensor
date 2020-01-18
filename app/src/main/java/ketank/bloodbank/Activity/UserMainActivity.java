@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
@@ -97,7 +98,13 @@ public class UserMainActivity extends AppCompatActivity {
 
         if (requestCode==2){
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                getLocation();
+
+                {
+
+                                getLocation();}
+
+
+
             }
         }
 

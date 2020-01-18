@@ -1,7 +1,7 @@
 package ketank.bloodbank.Models;
 
 public class BloodBank {
-
+Double rating;
     String id,Name,Lat,Lang,Place,ImgUrl;
     int ops,ong,aps,ang,bps,bng,abps,abng;
     int sum=ops+ong+aps+ang+bps+bng+abps+abng;
@@ -120,5 +120,12 @@ public class BloodBank {
 
     public void setImgUrl(String imgUrl) {
         ImgUrl = imgUrl;
+    }
+    public Double getrating() {
+        return rating;
+    }
+
+    public void setrating(Double rating) {
+        rating = rating;
     }
 }
