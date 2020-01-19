@@ -18,6 +18,7 @@ public class All_urls {
         public static final String Getbankstock(String bbid){
             return "http://eclectika.org/api/blood.php/Getbankstock?bbid="+bbid;
         }
+
         public static  final String UserNearBank="http://eclectika.org/api/blood.php/UserNearBank";
 
 

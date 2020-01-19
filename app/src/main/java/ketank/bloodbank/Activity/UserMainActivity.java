@@ -1,6 +1,10 @@
 package ketank.bloodbank.Activity;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -8,22 +12,33 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 
 import com.scwang.wave.MultiWaveHeader;
 
 import fr.quentinklein.slt.LocationTracker;
 import fr.quentinklein.slt.TrackerSettings;
 import ketank.bloodbank.Fragments.User.NearbyActivity;
+import ketank.bloodbank.FuelReadingApi.ApiClient;
+import ketank.bloodbank.FuelReadingApi.ApiInterface;
+import ketank.bloodbank.Models.FuelRange;
 import ketank.bloodbank.R;
 import me.itangqi.waveloadingview.WaveLoadingView;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class UserMainActivity extends AppCompatActivity {
 
@@ -37,14 +52,30 @@ public class UserMainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_main);
+
         //users= (CardView) findViewById(R.id.card1);
         hospitals = (CardView) findViewById(R.id.card2);
 
-        waveLoadingView =(WaveLoadingView) findViewById(R.id.waveLoadingView);
+        //fuel gauge animation
+        waveLoadingView = findViewById(R.id.waveLoadingView);
         waveLoadingView.setProgressValue(50);
+        waveLoadingView.setAnimDuration(2000);
 
 
+        //for testing in app notification
+        /*for(int i=1;i<101;i++)
+        {
+            if(i==10)
+            {
+                showNotification("FUEL SENSOR","You are low on fuel");
 
+            }
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }*/
 
         preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
 
@@ -68,8 +99,39 @@ public class UserMainActivity extends AppCompatActivity {
 
         getLocation();
 
+        loadJson(1);
 
+    }
 
+    //CALL FOR FUELDATA
+    public void loadJson(final int s)
+    {
+        ApiInterface apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
+
+        Call<FuelRange> call =apiInterface.getFuelRange(s);
+
+        call.enqueue(new Callback<FuelRange>() {
+            @Override
+            public void onResponse(Call<FuelRange> call, Response<FuelRange> response) {
+                if (response.isSuccessful() && response.body()!= null)
+                {
+                    Log.d("Tambe :",response.body().getFuelVal().substring(0,7) + " " +response.body().getCfl());
+                    int cfl = Integer.valueOf(response.body().getCfl());
+                    waveLoadingView.setProgressValue(cfl);
+                    if(cfl<25){
+                        waveLoadingView.setWaveColor(Color.RED);
+                        showNotification("FUEL SENSOR","You are low on fuel");
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<FuelRange> call, Throwable t) {
+
+                Toast.makeText(UserMainActivity.this,"Network failure",Toast.LENGTH_LONG).show();
+
+            }
+        });
     }
 
     void showMap(){
@@ -107,6 +169,29 @@ public class UserMainActivity extends AppCompatActivity {
             }
         }
 
+    }
+
+
+    //Notification inapp
+    void showNotification(String title, String message) {
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel("YOUR_CHANNEL_ID",
+                    "YOUR_CHANNEL_NAME",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("YOUR_NOTIFICATION_CHANNEL_DISCRIPTION");
+            mNotificationManager.createNotificationChannel(channel);
+        }
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getApplicationContext(), "YOUR_CHANNEL_ID")
+                .setSmallIcon(R.mipmap.ic_launcher) // notification icon
+                .setContentTitle(title) // title for notification
+                .setContentText(message)// message for notification
+                .setAutoCancel(true); // clear notification after click
+        Intent intent = new Intent(getApplicationContext(), MapsActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        mBuilder.setContentIntent(pi);
+        mNotificationManager.notify(0, mBuilder.build());
     }
 
 

@@ -61,8 +61,8 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:layout_margin="32dp"
-            app:wlv_borderColor="@color/colorAccent"
-            app:wlv_borderWidth="3dp"
+            app:wlv_borderColor="#000"
+            app:wlv_borderWidth="10dp"
             app:wlv_shapeType="circle"
             app:wlv_round_rectangle="true"
             app:wlv_triangle_direction="north"
@@ -79,8 +79,8 @@
             app:wlv_titleBottomColor="@android:color/white"
             app:wlv_titleBottomSize="24sp"
 
-            app:wlv_waveAmplitude="70"
-            app:wlv_waveColor="@color/colorAccent"
+            app:wlv_waveAmplitude="40"
+            app:wlv_waveColor="#1B8525"
 
             />
 

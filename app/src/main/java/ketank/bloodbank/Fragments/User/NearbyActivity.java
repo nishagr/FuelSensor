@@ -58,7 +58,7 @@ public class NearbyActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_nearby);
 
-        spinner = (MaterialSpinner) findViewById(R.id.spinner);
+        spinner =  findViewById(R.id.spinner);
 
         spinner.setItems("All", "O+","O-","A+", "A-","B+","B-","AB+","AB-");
 
