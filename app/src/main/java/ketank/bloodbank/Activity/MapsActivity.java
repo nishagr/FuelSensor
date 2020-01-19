@@ -74,18 +74,21 @@ import ketank.bloodbank.Other.ClickListener;
 import ketank.bloodbank.Other.RecyclerTouchListener;
 import ketank.bloodbank.R;
 import ketank.bloodbank.Urls.All_urls;
+import ketank.bloodbank.rating;
 
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,GoogleMap.OnMarkerClickListener,RoutingListener, com.google.android.gms.location.LocationListener,GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
 
-    /*static final int Request_Camera  = 2 ;
+    /*static final int RequeSharedPrefst_Camera  = 2 ;
     private File imageFile;*/
 
     private Location currentLocation;
     private Marker currentLocationMarker;
     private LocationManager mlocationManager;
     private float start_rotation;
+    String mlat,mlong;
+    Float distance = Float.valueOf(1000000);
 
     String placelat,placelang;
 
@@ -226,7 +229,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             markerOptions.position(userLatLng);
             markerOptions.title("I am here");
             currentLocationMarker = mMap.addMarker(markerOptions);
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(userLatLng));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng,16));
         }
 
         googleMap.setOnMarkerClickListener(this);
@@ -273,6 +276,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     mapModel.setBps(post.getInt("Bps"));
                                     mapModel.setBng(post.getInt("Bng"));
 
+                                    Location dest = new Location("a");
+                                    dest.setLongitude(Double.parseDouble(post.getString("Lang")));
+                                    dest.setLatitude(Double.parseDouble(post.getString("Lat")));
+                                    Float d = mLocation.distanceTo(dest);
+                                    if(d<distance){
+                                        distance=d;
+                                        mlat=post.getString("Lat");
+                                        mlong=post.getString("Lang");
+
+                                    }
+
 
                                     bloodBanks.add(mapModel);
 
@@ -281,8 +295,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
                                 }
+if(userLatLng!=null){
+                                Routing routing = new Routing.Builder()
+                                        .key("AIzaSyBPs9eolVNUuDJgOz1M8zn7GozvShe1Ghk")
+                                        .travelMode(Routing.TravelMode.DRIVING)
+                                        .withListener(MapsActivity.this)
+                                        .waypoints(userLatLng, new LatLng(Double.parseDouble(placelat), Double.parseDouble(placelang)))
+                                        .build();
 
-                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(bloodBanks.get(0).getLat()), Double.parseDouble(bloodBanks.get(0).getLang())), 12));
+
+
+                                routing.execute();}
 
                                 BankListAdapter adapter = new BankListAdapter(bloodBanks, MapsActivity.this);
                                 recycle.setAdapter(adapter);
@@ -319,7 +342,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public boolean onMarkerClick(Marker marker) {
 
-        
+        Intent i=new Intent(this, rating.class);
+        i.putExtra("message",marker.getId());
+
+        startActivity(i);
         return false;
     }
 
@@ -337,11 +363,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onRoutingSuccess(ArrayList<Route> arrayList, int i) {
 
 
-
-        CameraUpdate center = CameraUpdateFactory.newLatLngZoom(userLatLng, 16);
-
-
-        mMap.moveCamera(center);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLatLng,16));
 
 
         if (polylines.size() > 0) {

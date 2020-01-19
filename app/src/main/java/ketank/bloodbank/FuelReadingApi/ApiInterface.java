@@ -1,8 +1,12 @@
 package ketank.bloodbank.FuelReadingApi;
 
 import ketank.bloodbank.Models.FuelRange;
+import ketank.bloodbank.Models.reviews;
 import retrofit2.Call;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
+import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 public interface ApiInterface {
@@ -29,5 +33,12 @@ public interface ApiInterface {
     Call<FuelRange> getFuelRange(
             @Query("uid") int uid
     );
+
+
+    @POST("/rate_pump")
+    @FormUrlEncoded
+    Call<reviews> savePost(@Field("rate") int rating,
+                           //  @Field("body") String body,
+                           @Field("pump_id") int pump_id);
 
 }

@@ -15,7 +15,12 @@ import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -28,12 +33,18 @@ import androidx.core.app.NotificationCompat;
 
 import com.scwang.wave.MultiWaveHeader;
 
+import java.util.List;
+import java.util.Observable;
+import java.util.concurrent.TimeUnit;
+
 import fr.quentinklein.slt.LocationTracker;
 import fr.quentinklein.slt.TrackerSettings;
+import io.reactivex.disposables.Disposable;
 import ketank.bloodbank.Fragments.User.NearbyActivity;
 import ketank.bloodbank.FuelReadingApi.ApiClient;
 import ketank.bloodbank.FuelReadingApi.ApiInterface;
 import ketank.bloodbank.Models.FuelRange;
+import ketank.bloodbank.Other.SharedPref;
 import ketank.bloodbank.R;
 import me.itangqi.waveloadingview.WaveLoadingView;
 import retrofit2.Call;
@@ -44,15 +55,33 @@ public class UserMainActivity extends AppCompatActivity {
 
     //MultiWaveHeader fuel_wave;
     WaveLoadingView waveLoadingView;
-    CardView users,hospitals;
+    CardView users, hospitals;
     LocationTracker tracker;
-    int REQUEST_LOCATION=5;
+    int REQUEST_LOCATION = 5;
+    FuelRange fuelRange;
+    SharedPref fuelPref;
     SharedPreferences preferences;
+
+    //Disposable disposable;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startFuelRangingElapseThread();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_main);
 
+        fuelPref = new SharedPref();
         //users= (CardView) findViewById(R.id.card1);
         hospitals = (CardView) findViewById(R.id.card2);
 
@@ -61,6 +90,14 @@ public class UserMainActivity extends AppCompatActivity {
         waveLoadingView.setProgressValue(50);
         waveLoadingView.setAnimDuration(2000);
 
+
+        waveLoadingView.setOnClickListener(v -> {
+
+
+            Toast.makeText(UserMainActivity.this, "clicked :", Toast.LENGTH_LONG).show();
+
+
+        });
 
         //for testing in app notification
         /*for(int i=1;i<101;i++)
@@ -77,7 +114,7 @@ public class UserMainActivity extends AppCompatActivity {
             }
         }*/
 
-        preferences = getSharedPreferences("mypref",Context.MODE_PRIVATE);
+        preferences = getSharedPreferences("mypref", Context.MODE_PRIVATE);
 
 //        users.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -93,48 +130,74 @@ public class UserMainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                 showMap();
+                showMap();
             }
         });
 
         getLocation();
 
-        loadJson(1);
+
+        //api calling after every 5sec
+
+        startFuelRangingElapseThread();
+
 
     }
 
+    private void startFuelRangingElapseThread() {
+        new Thread(new Runnable() {
+
+            public void run() {
+                while (true) {
+                    loadJson(1);
+
+                    try {
+                        synchronized (this) {
+                            Thread.sleep(10000);
+                            notify();
+                        }
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
     //CALL FOR FUELDATA
-    public void loadJson(final int s)
-    {
+    public void loadJson(final int s) {
         ApiInterface apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
 
-        Call<FuelRange> call =apiInterface.getFuelRange(s);
+        Call<FuelRange> call = apiInterface.getFuelRange(s);
 
         call.enqueue(new Callback<FuelRange>() {
             @Override
             public void onResponse(Call<FuelRange> call, Response<FuelRange> response) {
-                if (response.isSuccessful() && response.body()!= null)
-                {
-                    Log.d("Tambe :",response.body().getFuelVal().substring(0,7) + " " +response.body().getCfl());
-                    int cfl = Integer.valueOf(response.body().getCfl());
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d("Tambe :", response.body().getFuelVal() + " " + response.body().getCfl());
+                    //fuelRange =response.body();
+//                    fuelPref.addFuelConsumption(UserMainActivity.this,response.body());
+
+                    int cfl = response.body().getCfl();
                     waveLoadingView.setProgressValue(cfl);
-                    if(cfl<25){
+                    if (cfl < 25) {
                         waveLoadingView.setWaveColor(Color.RED);
-                        showNotification("FUEL SENSOR","You are low on fuel");
-                    }
+                        showNotification("FUEL SENSOR", "You are low on fuel");
+                    } else waveLoadingView.setWaveColor(Color.GREEN);
                 }
             }
 
             @Override
             public void onFailure(Call<FuelRange> call, Throwable t) {
 
-                Toast.makeText(UserMainActivity.this,"Network failure",Toast.LENGTH_LONG).show();
+                Toast.makeText(UserMainActivity.this, "Network failure", Toast.LENGTH_LONG).show();
 
             }
         });
     }
 
-    void showMap(){
+    void showMap() {
         if (ActivityCompat.checkSelfPermission(UserMainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
@@ -151,19 +214,19 @@ public class UserMainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if(requestCode==1){
+        if (requestCode == 1) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 showMap();
             }
         }
 
-        if (requestCode==2){
+        if (requestCode == 2) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                 {
 
-                                getLocation();}
-
+                    getLocation();
+                }
 
 
             }
@@ -205,10 +268,9 @@ public class UserMainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
 
         } else {
-           final ProgressDialog dialog = new ProgressDialog(this);
+            final ProgressDialog dialog = new ProgressDialog(this);
 
             dialog.show();
-
 
 
             TrackerSettings settings =
@@ -216,25 +278,22 @@ public class UserMainActivity extends AppCompatActivity {
                             .setUseGPS(true)
                             .setUseNetwork(true)
                             .setUsePassive(true)
-                            .setTimeBetweenUpdates(5*1000);
+                            .setTimeBetweenUpdates(5 * 1000);
 
             tracker = new LocationTracker(this, settings) {
                 @Override
-                public void onLocationFound(Location location)
-                {
+                public void onLocationFound(Location location) {
                     dialog.dismiss();
 
                     if (location != null) {
-                      Double  lat_all =location.getLatitude();
-                      Double  long_all =location.getLongitude();
+                        Double lat_all = location.getLatitude();
+                        Double long_all = location.getLongitude();
 
                         SharedPreferences.Editor editor = preferences.edit();
-                        editor.putString("myLat", ""+lat_all);
-                        editor.putString("mylang", ""+long_all);
+                        editor.putString("myLat", "" + lat_all);
+                        editor.putString("mylang", "" + long_all);
 
                         editor.apply();
-
-
 
 
                     }
@@ -258,10 +317,10 @@ public class UserMainActivity extends AppCompatActivity {
 
     public void LogOut(View view) {
 
-        Intent intent=new Intent(UserMainActivity.this, LoginActivity.class);
-        SharedPreferences.Editor editor= preferences.edit() ;
-        editor.putBoolean("Userlogin",false);
-        editor.putBoolean("BankLogin",false);
+        Intent intent = new Intent(UserMainActivity.this, LoginActivity.class);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("Userlogin", false);
+        editor.putBoolean("BankLogin", false);
         editor.apply();
         startActivity(intent);
         finish();

@@ -7,25 +7,25 @@ public class FuelRange {
 
     @SerializedName("val")
     @Expose
-    private String fuelVal;
+    private int fuelVal;
 
     @SerializedName("cfl")
     @Expose
-    private String cfl;
+    private int cfl;
 
-    public String getFuelVal() {
+    public int getFuelVal() {
         return fuelVal;
     }
 
-    public void setFuelVal(String fuelVal) {
+    public void setFuelVal(int fuelVal) {
         this.fuelVal = fuelVal;
     }
 
-    public String getCfl() {
+    public int getCfl() {
         return cfl;
     }
 
-    public void setCfl(String cfl) {
+    public void setCfl(int cfl) {
         this.cfl = cfl;
     }
 }
